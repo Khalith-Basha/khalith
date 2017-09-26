@@ -1,0 +1,59 @@
+@ECHO OFF
+
+echo.
+ echo --------------------------------------------------------------------------------------
+ echo Test Environment:  %PLATFORM%    %BROWSER%    %BASE_URL%
+ echo --------------------------------------------------------------------------------------
+ echo.
+ 
+ echo cd to project directory(%PROJECT_DIR%)...
+ CD "%PROJECT_DIR%"
+ echo Done
+ echo.
+
+SET DEFAULTPROFILE=%SINGLETHREAD%
+
+ IF %PROFILE%==%MULTITHREAD% (SET DEFAULTPROFILE=%MULTITHREAD%) ELSE (
+  IF %PROFILE%==%SINGLETHREAD% (SET DEFAULTPROFILE=%SINGLETHREAD%) ELSE (
+    echo ****************** Invalid profile configuration... 
+    echo ****************** Using default profile: "%DEFAULTPROFILE%"
+  )
+ )
+
+ echo --- Running in %DEFAULTPROFILE% mode ---
+
+
+ echo Cleaning...
+ CALL mvn clean  
+ echo Done
+ echo.
+
+ echo Compiling...
+ CALL mvn compile  
+ echo Done
+ echo.
+
+ echo Executing...
+
+
+
+ IF %PROFILE%==%MULTITHREAD% ( 
+ echo MULTITHREAD
+CALL mvn integration-test -P %DEFAULTPROFILE% -Dwebdriver.driver=%BROWSER% -Dwebdriver.base.url="%BASE_URL%" -Dplatform=%PLATFORM%
+CALL mvn serenity:aggregate -P %DEFAULTPROFILE%
+REM CALL mvn verify -P %DEFAULTPROFILE% -Dwebdriver.driver=%BROWSER% -Dwebdriver.base.url="%BASE_URL%"
+ )
+ 
+IF %PROFILE%==%SINGLETHREAD% ( 
+echo SINGLETHREAD
+IF %PLATFORM%==BROWSERSTACK (
+CALL mvn verify -P %DEFAULTPROFILE% -Dplatform=%PLATFORM% -Dbrowserstack.os=%BROWSERSTACK_OS% -Dbrowserstack.os.version=%BROWSERSTACK_OS_VERSION% -Dbrowserstack.browser=%BROWSER% -Dbrowserstack.browser.version=%BROWSER_VERSION% -Dbrowserstack.build=%BROWSERSTACK_BUILD% -Dbrowserstack.url="%BROWSERSTACK_URL%" -Dwebdriver.base.url="%BASE_URL%"
+) ELSE (
+CALL mvn verify -P %DEFAULTPROFILE% -Dplatform=%PLATFORM% -Dwebdriver.driver=%BROWSER% -Dwebdriver.base.url="%BASE_URL%"
+)
+)
+
+REM  CALL mvn verify -P singlethread -Dwebdriver.driver=chrome -Dwebdriver.base.url="http://au.whispir.com" -Dcucumber.options="--features 'src/test/resources/features' --tags @verifySampleContacts"
+ echo Execution Done
+ echo.
+pause
