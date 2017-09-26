@@ -1,0 +1,1984 @@
+package com.wte.base;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.SocketException;
+import java.net.URL;
+import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+import org.openqa.selenium.By;
+import org.openqa.selenium.Dimension;
+import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.StaleElementReferenceException;
+import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebDriverException;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.firefox.FirefoxDriver;
+import org.openqa.selenium.firefox.FirefoxProfile;
+import org.openqa.selenium.remote.CapabilityType;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.UnreachableBrowserException;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.Select;
+import org.openqa.selenium.support.ui.Wait;
+import org.openqa.selenium.support.ui.WebDriverWait;
+import org.testng.Assert;
+import org.testng.ITestResult;
+import org.testng.annotations.AfterMethod;
+import org.testng.annotations.Parameters;
+
+import com.thoughtworks.selenium.SeleneseTestBase;
+import com.wte.pages.GenericRegistration;
+import com.wte.pages.WTEPage;
+
+public class BaseTest {
+	private int visibleCount = 0;
+	private String environment;
+	private static boolean pass = true;
+	private String EXECUTION_ENVIRONMENT;
+	private String SELENIUM_BROWSER;
+	private String SELENIUM_VERSION;
+	private String SELENIUM_PLATFORM;
+	private String jobID = null;
+	public WebDriver driver = null;
+	public SeleneseTestBase sb = new SeleneseTestBase();
+	public ArrayList<String> dataArray = new ArrayList<String>();
+	public final String pageLoad = "30000";
+	protected String TYPE = "type";
+	protected Map<String, String> userInfo = new HashMap<String, String>();
+	protected String SELECT = "select";
+	protected String SELECT_BY_VISIBLETEXT = "selectbyvisibletext";
+	protected String SELECT_BY_INDEX = "selectbyindex";
+	public final int PAGE_TIMEOUT_TIME = 30000;
+	public final long ACTION_TIMEOUT_TIME = 10000;
+	public final int CHECK_INTERVAL_TIME = 300;
+	public final Logger logger = Logger.getLogger(BaseTest.class);
+	public String port;
+	private String JOB_Name;
+	// JavascriptExecutor js =null;
+	public File directory = new File(".");
+	public String baseURL = null;
+	// protected Ansi ansi = null;
+	File file = null;
+	public FileWriter fw = null;
+	public BufferedWriter write = null;
+	protected int i = 0;
+	protected String url = null;
+	public String jsonObject = null;
+	public String events = null;
+	public boolean halfWay = false;
+	public boolean videoCompletion = false;
+	public boolean eventFiringPrinted = false;
+	protected String quizIntro = "div#quiz-intro";
+	protected String header = "header h1";
+	protected String getResultsButton = "input[src*='button_get_results']";
+	protected String emailTextBox = "input#quiz-email";
+	// protected Ansi ansiError = null;
+	String link = null;
+	String URLs[] = null;
+
+	int row_ct_loc = 19;
+	int url_ct = 4;
+	String locators[] = new String[row_ct_loc];
+	String descriptor[] = new String[row_ct_loc];
+	int neg_test_advt_row_num = 21;
+	String row_num;
+
+	List<WebElement> element = null;
+	protected JavascriptExecutor js = (JavascriptExecutor) driver;
+
+	/**
+	 * Method verifies the size of an image.
+	 * 
+	 * @param checkpointDescription
+	 *            : Describe what kind of checkpoint is it ?
+	 * @param img_locator
+	 * @param expectedWidth
+	 * @param expectedHeight
+	 */
+
+	public void printStartMessage() {
+		String className = this.getClass().getSimpleName();
+		for (int i = 0; i < 5; i++) {
+			System.out.println("");
+		}
+		// ansi = new Ansi(Ansi.Attribute.BRIGHT, Ansi.Color.GREEN,
+		// Ansi.Color.RED);
+		// ansi.outln("====================================================================");
+		// ansi.outln("Started executing " + className + " Test");
+		// ansi.outln("====================================================================");
+	}
+
+	public void printEndMessage() {
+		String className = this.getClass().getSimpleName();
+		for (int i = 0; i < 5; i++) {
+			System.out.println("");
+		}
+		// ansi.outln("====================================================================");
+		// ansi.outln(" Finished executing " + className + " Test");
+		// ansi.outln("====================================================================");
+	}
+
+	public void verifyImageSize(WebDriver driver, String checkpointDescription,
+			String img_locator, int expectedWidth, int expectedHeight) {
+
+		try {
+			findElementAndHighlight(driver, img_locator);
+			sb.verifyTrue(driver.findElements(By.cssSelector(img_locator))
+					.size() != 0);
+			Dimension elementDimensions = driver.findElement(
+					By.cssSelector(img_locator)).getSize();
+			int actualHeight = (Integer) elementDimensions.getHeight();
+			int actualWidth = (Integer) elementDimensions.getWidth();
+			sb.verifyTrue(actualHeight == expectedHeight
+					&& actualWidth == expectedWidth);
+		} catch (Exception e) {
+			System.out.println(e.getMessage());
+			sb.verifyTrue(false);
+		}
+
+	}
+
+	public void verifyComscore(WebDriver driver) {
+		System.out.println("verifying comscore on " + driver.getCurrentUrl());
+		sb.verifyTrue(driver.getPageSource().contains(
+				"<script> COMSCORE.beacon"));
+		if (!driver.getPageSource().toLowerCase()
+				.contains("<script> COMSCORE.beacon".toLowerCase())) {
+			System.err.println("Comscore was not found on URL "
+					+ driver.getCurrentUrl());
+		}
+	}
+
+	/**
+	 * @param Verifies
+	 *            if a particular text is present on the webpage or not.
+	 */
+	public void verifyTextIsPresent(WebDriver driver, String text) {
+
+		try {
+			// validate if locator is blank or null
+			System.out.println("Verifying if" + text + " is present.");
+			sb.verifyFalse(text.isEmpty() || text == null);
+			sb.verifyTrue(driver.getPageSource().contains(text));
+		}
+
+		catch (Exception e) {
+			System.out.println(e.getMessage());
+			System.err.println("Looking for the following text: " + text
+					+ " on " + driver.getCurrentUrl()
+					+ " is this text not on the given URL anymore ?");
+			sb.verifyTrue(false);
+		}
+	}
+
+	/**
+	 * @param This
+	 *            method verifies that the expected text is not present in the
+	 *            html source. text is a String parameter.
+	 * @throws Exception
+	 */
+	public void verifyTextIsNotPresent(WebDriver driver, String text)
+			throws Exception {
+
+		try {
+			// validate if locator is blank or null
+			sb.verifyFalse(text.isEmpty() || text == null);
+			sb.verifyTrue(!driver.getPageSource().contains(text));
+		}
+
+		catch (Exception e) {
+			throw new Exception("The text " + text + " was not present on URL "
+					+ driver.getCurrentUrl());
+
+		}
+
+	}
+
+	/**
+	 * @param String
+	 *            locator. This method checks if the element is not visible.
+	 * @throws Exception
+	 */
+	public void verifyElementIsNotVisible(WebDriver driver, String locator)
+			throws Exception
+
+	{
+		try {
+			sb.verifyTrue(!driver.findElement(By.cssSelector(locator))
+					.isDisplayed());
+		}
+
+		catch (Exception e) {
+			logger.error("Some error occurred while checking " + locator
+					+ " locator is invisible.");
+			e.printStackTrace();
+			throw new Exception(" Locator " + locator
+					+ " was not found on URL " + driver.getCurrentUrl());
+		}
+
+	}
+
+	/**
+	 * @param Pass
+	 *            the locator and you will be able to highlight the element
+	 *            while running the script. Highlighting refers to a red square
+	 *            around that webelement.
+	 */
+	public void findElementAndHighlight(WebDriver driver, String locator) {
+		try {
+			WebElement elem = null;
+			if (locator.startsWith("css=")) {
+				locator = locator.substring(4);
+				elem = driver.findElement(By.cssSelector(locator));
+			} else if (locator.startsWith("link=")) {
+				elem = driver.findElement(By.linkText(locator));
+			} else if (locator.startsWith("//")) {
+				elem = driver.findElement(By.xpath(locator));
+			} else {
+				elem = driver.findElement(By.cssSelector(locator));
+			}
+			if (driver instanceof JavascriptExecutor) {
+				System.out.println("Highlighting: " + locator);
+				((JavascriptExecutor) driver).executeScript(
+						"arguments[0].style.border='3px solid red'", elem);
+			}
+		} catch (NoSuchElementException e) {
+			logger.error("Element highlight method could not find the locator: "
+					+ locator);
+		} catch (Exception e) {
+			logger.error("Some error occurred while highlighting the locator: "
+					+ locator);
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * @param: String locator. This method verifies if the element is visible.
+	 */
+	public void verifyElementIsVisible(WebDriver driver, String locator) {
+		// validate if locator is blank or null
+		try {
+
+			Assert.assertTrue(driver.findElement(By.cssSelector(locator))
+					.isDisplayed());
+			findElementAndHighlight(driver, locator);
+		}
+
+		catch (NoSuchElementException e) {
+			Assert.fail("locator " + locator + " was not found");
+			System.out.println(locator + " was not found");
+			logger.error(locator + " was not found");
+		}
+
+		catch (AssertionError e) {
+			Assert.fail("locator " + locator + " was not visible on page "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+			logger.error("locator " + locator + " was not visible on URL "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+			System.out.println(locator + " was not visible on URL "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+		}
+
+		catch (Exception e) {
+			Assert.fail(e.getMessage() + " occurred on page "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+			logger.error("Error occurred while checking " + locator
+					+ " is visible");
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * Verifies if the element is visible or not. This method also This can
+	 * throw noSuchElementException if the element does not exist.
+	 * 
+	 * @param String
+	 *            locator
+	 * 
+	 * @param Stirng
+	 *            description
+	 * 
+	 */
+	public void verifyElementIsVisible(WebDriver driver, String locator,
+			String description) {
+		// validate if locator is blank or null
+		System.out.println("Verifying if " + description + " is visible.");
+
+		try {
+			findElementAndHighlight(driver, locator);
+			Assert.assertTrue(driver.findElement(By.cssSelector(locator))
+					.isDisplayed());
+		}
+
+		catch (NoSuchElementException e) {
+			Assert.fail("locator " + locator + " was not found on URL "
+					+ driver.getCurrentUrl());
+			sb.verifyTrue(false);
+			System.out.println(description + " was not found");
+			System.err.println(description + " was not found");
+			// screenShot(new
+			// Throwable().fillInStackTrace().getStackTrace()[1].getMethodName());
+		} catch (AssertionError e) {
+			Assert.fail("locator " + locator + " was not visible on page "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+			logger.error("locator " + locator + " was not visible on URL "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+			System.out.println(locator + " was not visible on URL "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+		}
+
+		catch (Exception e) {
+			Assert.fail(e.getLocalizedMessage()
+					+ " occured while checking  if " + locator
+					+ " is visible on page. The current URL is "
+					+ driver.getCurrentUrl() + " The title of the page is "
+					+ driver.getTitle());
+			System.err.println(description + " was not found");
+			System.err.println(description + " was not visible");
+			e.printStackTrace();
+		}
+
+	}
+
+	public boolean isVideoPlaying(WebDriver driver, String url)
+			throws Exception {
+
+		// Get the current timeStamp in start variable. Most of the further time
+		// calculations are based on this timestamp.
+
+		Object isVideoPlaying = null;
+		boolean adPlaying = false;
+		// Sits in a while loop for next 5 seconds max. and checks if the video
+		// is playing or not. Based on the
+		// results retrieved in isPlaying variable, necessary scripts are
+		// executed in the browser.
+
+		if (js.executeScript("return $('.jsHdnAutoPlay').val();").toString()
+				.equalsIgnoreCase("true")) {
+			System.out.println("This Video is set to autoplay");
+			// sit in a while loop until the advertisement is playing.
+			while (js.executeScript("return EHVideo.automationTest.adPlaying")
+					.toString().equalsIgnoreCase("true")) {
+				// break out of the loop once the advertisement stops
+				// playing
+				if (adPlaying == false) {
+					adPlaying = true;
+					logger.info("This is video number " + i
+							+ " Current URL is " + driver.getCurrentUrl()
+							+ " Advertisement played.");
+					System.out
+							.println("Currently advertisement is being played");
+				}
+				continue;
+			}
+
+		}
+
+		// if video is not autoplay, play the video.
+		else if (js.executeScript("return $('.jsHdnAutoPlay').val();")
+				.toString().equalsIgnoreCase("false")) {
+			logger.warn("The video is not autoplay. URL is "
+					+ driver.getCurrentUrl());
+			js.executeScript("EHVideo.Experience[0].modules.videoPlayer.play();");
+		}
+
+		Object duration = null;
+		// The following javascript gets the duration of the video.
+		while (duration == null) {
+			try {
+				// duration =
+				// js.executeScript("return EHVideo.Experience[0].modules.videoPlayer.getVideoDuration();");
+				duration = "60";
+			} catch (WebDriverException e) {
+				continue;
+			}
+
+		}
+
+		System.out.println("Total video duration is " + duration.toString()
+				+ " seconds");
+
+		long start = System.currentTimeMillis();
+		// The end of the video is the total duration multiplied by 1000, since
+		// things are going in milliseconds.
+		Double end = (Float.parseFloat(duration.toString()) * 1000.00);
+		// Video End is end + 500 milliseconds. This gives a buffer to check
+		// event65. 500 milliseconds are arbitrary.
+		long videoEnd = start + end.intValue() + 500;
+		// As mentioned above, all calculations are based on start variable and
+		// so is the one mentioned below.
+		float halfCompletion = 0;
+
+		// The following while loop will be executed from start to end of the
+		// video. The video will be played thoroughly.
+		while (System.currentTimeMillis() <= videoEnd) {
+
+			// Check if the video is playing or not.Depending on that isPlaying
+			// will have the True or False as a String.
+			try {
+				isVideoPlaying = js
+						.executeScript("return EHVideo.automationTest.videoPlaying");
+			} catch (WebDriverException e) {
+				System.out.println("EHVideo Undefined. Checking again.");
+				continue;
+			}
+			Float currentPosition = Float
+					.parseFloat(js
+							.executeScript(
+									"return EHVideo.Experience[0].modules.videoPlayer.getVideoPosition()")
+							.toString());
+			// If True
+			if (isVideoPlaying.toString().equals("true")) {
+
+				// Remove commas from the events string. This is required to
+				// write the data to the csv file.
+
+				events = js.executeScript("return s.events").toString()
+						.replace(",", " ");
+				// Parse the video duration object and get the duration in
+				// integer.
+				currentPosition = Float
+						.parseFloat(js
+								.executeScript(
+										"return EHVideo.Experience[0].modules.videoPlayer.getVideoPosition()")
+								.toString());
+				// halfCompletion is determined here based on the total video
+				// duration.
+				halfCompletion = (float) (currentPosition / 2.00);
+				// If the video is halfway through, then event 63 should be
+				// fired. The event firing is checked for up to 4 seconds after
+				// video is half way through.
+				if (currentPosition >= halfCompletion
+						&& currentPosition - halfCompletion <= 10000) {
+					if (events.contains("event63") && halfWay == false) {
+						halfWay = true;
+						System.out
+								.println("Event 63 was fired after half way completion of the video. The current position is "
+										+ currentPosition);
+					}
+
+				}
+
+				// The program will enter in the following condition only if the
+				// position of the video is equal to or
+				// less than 10 seconds,event variable contains event52 and
+				// event firing has not been recognized yet.
+
+				if (currentPosition <= 10.00 && (events.contains("event52"))
+						&& eventFiringPrinted == false) {
+					eventFiringPrinted = true;
+					System.out
+							.println("The video on "
+									+ url
+									+ " played. Event 52 was fired. Video started playing");
+					logger.info("This is video number " + i
+							+ " Current URL is " + driver.getCurrentUrl()
+							+ " Video played.");
+					Thread.sleep(5000);
+					return true;
+					// following part only when running the script for duration
+					// of 60 seconds.
+
+				}
+
+				if (currentPosition != 0.0 && currentPosition <= 3.00
+						&& !(events.contains("event52"))) {
+					System.err.println("Current video position is. "
+							+ currentPosition
+							+ " Dumping s.events is returning " + events);
+					Thread.sleep(500);
+				}
+				// If the event52 was not fired in first 10 seconds then, get
+				// jsonObject value.
+				else if (currentPosition > 10.00 && eventFiringPrinted == false) {
+					logger.error("The video on "
+							+ url
+							+ " played; however, Event 52 was not fired. "
+							+ "Returning json object and moving on to next video. The current position of the video is "
+							+ currentPosition);
+					System.out
+							.println("The video on "
+									+ url
+									+ " played; however, Event 52 was not fired. "
+									+ "Returning json object and moving on to next video. The current position of the video is "
+									+ currentPosition);
+					return false;
+				}
+
+			}
+
+			// If isPlaying is false, that means the video is stopped. Now check
+			// event65.
+			else if (isVideoPlaying.toString().equals("false")
+					&& System.currentTimeMillis() > videoEnd - 500) {
+
+				// Remove commas from the events string. This is required to
+				// write the data to the csv file.
+				events = js.executeScript("return s.events").toString()
+						.replace(",", " ");
+				if (videoEnd - System.currentTimeMillis() <= 2000) {
+					if (events.contains("event65") && videoCompletion == false) {
+						videoCompletion = true;
+						System.out
+								.println("Event 65 was fired after the completion of the video");
+						return videoCompletion;
+					}
+
+				}
+
+			}
+		}
+		return videoCompletion;
+
+	}
+
+	public String getJsonObject(WebDriver driver) {
+		Object videoID = null;
+
+		videoID = js.executeScript("return $('.jsHdnVideoPlayer').val();");
+
+		driver.navigate()
+				.to("http://api.brightcove.com/services/library?command=find_video_by_id"
+						+ "&video_id="
+						+ videoID.toString()
+						+ "&token=u9hO3Q2bgVXDepqSky-A3dQMEsYAjwK9PWBL4C2SOjQ.&callback=?"
+						+ "&noCacheIE=1353420489790");
+
+		jsonObject = driver.findElement(By.cssSelector("pre")).getText();
+
+		// For removing the commas from the retrieved json object string.
+		jsonObject = jsonObject.replace(",", " ");
+
+		return jsonObject;
+	}
+
+	/**
+	 * @param Takes
+	 *            a String locator. This method verifies if the locator/element
+	 *            is present in the html source.
+	 */
+	public void verifyElementExists(WebDriver driver, String locator) {
+
+		// validate if locator is blank or null
+		sb.verifyFalse((locator.isEmpty() || locator == null));
+		try {
+			if (locator.startsWith("css=")) {
+				findElementAndHighlight(driver, locator.substring(4));
+				sb.verifyTrue(driver.findElements(By.cssSelector(locator))
+						.size() != 0);
+			}
+
+			else if (locator.startsWith("//")) {
+				findElementAndHighlight(driver, locator);
+				sb.verifyTrue(driver.findElements(By.xpath(locator)).size() != 0);
+			}
+
+			else if (locator.startsWith("link=")) {
+				findElementAndHighlight(driver, locator.substring(5));
+				sb.verifyTrue(driver.findElements(
+						By.linkText(locator.substring(5))).size() != 0);
+			}
+
+			else {
+				findElementAndHighlight(driver, locator);
+				sb.verifyTrue(driver.findElements(By.cssSelector(locator))
+						.size() != 0);
+			}
+		}
+
+		catch (Exception e) {
+			Assert.fail(e.getMessage() + " occured while checking if "
+					+ locator + "is present or not..! URL is "
+					+ driver.getCurrentUrl());
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * This method verifies if the locator is present in the html source.
+	 * 
+	 * @param locator
+	 *            : It should be a string locator.
+	 * @param description
+	 *            : String parameter. Description is necessary sometimes to
+	 *            improve the readability of the report.
+	 */
+	public void verifyElementExists(WebDriver driver, String locator,
+			String description) {
+		System.out.println("Verifying " + description);
+		sb.verifyFalse((locator.isEmpty() || locator == null));
+
+		try {
+			if (locator.startsWith("css=")) {
+				findElementAndHighlight(driver, locator.substring(4));
+				sb.verifyTrue(driver.findElements(
+						By.cssSelector(locator.substring(4))).size() != 0);
+			}
+
+			else if (locator.startsWith("//")) {
+
+				sb.verifyTrue(driver.findElements(By.xpath(locator)).size() != 0);
+				findElementAndHighlight(driver, locator);
+			}
+
+			else if (locator.startsWith("link=")) {
+				findElementAndHighlight(driver, locator.substring(5));
+				sb.verifyTrue(driver.findElements(
+						By.linkText(locator.substring(5))).size() != 0);
+			}
+
+			else {
+				findElementAndHighlight(driver, locator);
+				sb.verifyTrue(driver.findElements(By.cssSelector(locator))
+						.size() != 0);
+			}
+		}
+
+		catch (Exception e) {
+			logger.error("Some error occured while checking if " + locator
+					+ "is present or not..!" + " locator corresponds to "
+					+ description);
+			e.printStackTrace();
+			System.err.println(description + " verification failed.");
+		}
+
+	}
+
+	/**
+	 * This method verifies if the locator is present in the html source.
+	 * 
+	 * @param locator
+	 *            : It should be a string locator.
+	 * @param description
+	 *            : String parameter. Description is necessary sometimes to
+	 *            improve the readability of the report.
+	 */
+	public void verifyElementDoesNotExist(WebDriver driver, String locator,
+			String description) {
+		System.out.println("Verifying " + description);
+		// validate if locator is blank or null
+
+		try {
+			if (locator.startsWith("css=")) {
+				element = driver.findElements(By.cssSelector(locator
+						.substring(4)));
+				if (!element.isEmpty()) {
+					throw new Exception(locator + " exists on URL: "
+							+ driver.getCurrentUrl());
+				} else
+					sb.verifyTrue(driver.findElements(
+							By.cssSelector(locator.substring(4))).size() == 0);
+			}
+
+			else if (locator.startsWith("//")) {
+
+				element = driver.findElements(By.xpath(locator));
+				if (!element.isEmpty()) {
+					throw new Exception(locator + " exists on URL: "
+							+ driver.getCurrentUrl());
+				} else {
+					sb.verifyTrue(driver.findElements(By.xpath(locator)).size() == 0);
+
+				}
+
+			}
+
+			else if (locator.startsWith("link=")) {
+
+				element = driver
+						.findElements(By.linkText(locator.substring(5)));
+				if (!element.isEmpty()) {
+					throw new Exception(locator + " exists on URL: "
+							+ driver.getCurrentUrl());
+				} else {
+					sb.verifyTrue(driver.findElements(
+							By.linkText(locator.substring(5))).size() == 0);
+
+				}
+
+			}
+
+			else {
+				element = driver.findElements(By.cssSelector(locator));
+				if (!element.isEmpty()) {
+					throw new Exception(locator + " exists on URL: "
+							+ driver.getCurrentUrl());
+				} else {
+
+					sb.verifyTrue(driver.findElements(By.cssSelector(locator))
+							.size() == 0);
+
+				}
+
+			}
+		}
+
+		catch (Exception e) {
+			logger.error(e.getMessage() + " occured while checking if "
+					+ locator + "is present or not..!"
+					+ " locator corresponds to " + description);
+
+		}
+
+	}
+
+	/**
+	 * @param Locator
+	 *            is a String parameter. This method verifies if the element is
+	 *            hidden.
+	 * 
+	 */
+	public void verifyElementIsHidden(WebDriver driver, String locator) {
+		try {
+			// validate if locator is blank or null
+			sb.verifyFalse(locator.isEmpty() || locator == null);
+			sb.verifyTrue(!driver.findElement(By.cssSelector(locator))
+					.isDisplayed());
+		}
+
+		catch (NoSuchElementException e) {
+			System.err.println("locator " + locator
+					+ " was not found on the URL " + driver.getCurrentUrl());
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			e.printStackTrace();
+		}
+
+	}
+
+	/**
+	 * The difference between validateText and validateInputText is that
+	 * validatetext can verify text from any field except a textbox.
+	 * ValidateInputText can do the remaining part.
+	 * 
+	 * @param locator
+	 *            : String parameter. It is preferred to have css locator.
+	 * @param expected
+	 *            : String parameter. Please pass the expected text here. This
+	 *            will be compared to the expected text.
+	 */
+	public void validateText(WebDriver driver, String locator, String expected) {
+		System.out.println("Verifying " + expected + " text at "
+				+ driver.getCurrentUrl() + locator
+				+ " is the corresponding locator.");
+		try {
+			findElementAndHighlight(driver, locator);
+			sb.verifyEquals(expected,
+					driver.findElement(By.cssSelector(locator)).getText());
+
+		}
+
+		catch (NoSuchElementException e) {
+			sb.verifyTrue(false);
+			logger.error("locator " + locator + "For expected text " + expected
+					+ " was not found on the URL " + driver.getCurrentUrl());
+			System.err.println("locator " + locator + "For expected text "
+					+ expected + " was not found on the URL "
+					+ driver.getCurrentUrl());
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			logger.error("Exception occurred in validateText method.");
+			System.err.println("Exception occurred in validateText method.");
+			e.printStackTrace();
+
+		}
+
+	}
+
+	/**
+	 * The difference between validateText and validateInputText is that
+	 * validatetext can verify text from any field except a textbox.
+	 * ValidateInputText can do the remaining part.
+	 * 
+	 * @param locator
+	 *            . String parameter
+	 * @param expected
+	 *            . String paramter
+	 */
+	public void validateInputText(WebDriver driver, String locator,
+			String expected) {
+		try {
+			findElementAndHighlight(driver, locator);
+			sb.verifyTrue(driver.findElement(By.cssSelector(locator))
+					.getAttribute("value").equalsIgnoreCase(expected));
+			if (!driver.findElement(By.cssSelector(locator))
+					.getAttribute("value").equalsIgnoreCase(expected)) {
+				String actual = driver.findElement(By.cssSelector(locator))
+						.getAttribute("value");
+				System.out
+						.println("Expected and Actual text did not match. Expected was "
+								+ expected + " Actual text is " + actual);
+				System.err
+						.println("Expected and Actual text did not match. Expected was "
+								+ expected + " Actual text is " + actual);
+			}
+		} catch (NoSuchElementException e) {
+			sb.verifyTrue(false);
+			System.err.println("locator " + locator + "For expected text "
+					+ expected + " was not found on the URL "
+					+ driver.getCurrentUrl());
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			System.out.println(e.getMessage());
+
+		}
+	}
+
+	public void verifyGoogleAnalytics(WebDriver driver) {
+		try {
+			String pageSource = driver.getPageSource();
+			sb.verifyTrue(pageSource.contains("UA-30535-1"));
+			if (!driver.getPageSource().contains("UA-30535-1")) {
+				System.err
+						.println("Google analytics tracker UA-30535-1 not found");
+			}
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			System.out.println(e.getMessage());
+			System.err
+					.println("Google analytics tracker UA-30535-1 not found.");
+		}
+	}
+
+	/**
+	 * Verifies Crowdscience on the URL you are currently on. This method will
+	 * get the page source and it will verify if the page has following
+	 * :http://.crowdscience.com/start-ab5270c749.js' type='text/javascript'
+	 * charset='utf-8'%3E%3C/script%3E
+	 */
+	public void verifyCrowdScience(WebDriver driver) {
+		try {
+			String pageSource = driver.getPageSource();
+			sb.verifyTrue(pageSource
+					.contains("http://.crowdscience.com/start-ab5270c749.js' type='text/javascript' charset='utf-8'%3E%3C/script%3E"));
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			System.err
+					.println("CrowdScience tag, i.e. 'http://.crowdscience.com/start-ab5270c749.js' type='text/JavaScript' charset='utf-8'%3E%3C/script%3E' not found.");
+			System.out.println(e.getMessage());
+		}
+	}
+
+	/**
+	 * The method does not take any paramter. This method is supposed to be
+	 * called after a user is logged in. It verifies that
+	 * "http://a.collective-media.net/adj/everydayhealth" is present in the
+	 * source when a user is logged in.
+	 */
+	public void verifyUTPPixels(WebDriver driver) {
+		try {
+			String pageSource = driver.getPageSource();
+			sb.verifyTrue(pageSource
+					.contains("http://a.collective-media.net/adj/everydayhealth"));
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			System.err
+					.println("Some error occurredUTP pixel, i.e. http://a.collective-media.net/adj/everydayhealth not found.");
+			System.out.println(e.getMessage());
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Method verifies Omniture events
+	 * 
+	 * @param description
+	 *            : Describe what kind of event is this. Ex: Page loading,
+	 *            Clicking etc.
+	 * @param eventtoverify
+	 *            : Event to verify in String format. Ex: event24,event05.
+	 * 
+	 */
+
+	public void verifyOmniture(WebDriver driver, String description,
+			String eventtoverify) {
+
+		try {
+			String test;
+			test = js.executeScript("return s.events").toString();
+			if (eventtoverify.equals(test)) {
+				System.out.println("Omniture event" + " " + eventtoverify + " "
+						+ "is generated" + " " + "when" + " " + description);
+			} else {
+				System.out.println("Omniture event is not generated when" + " "
+						+ description);
+			}
+
+		} catch (Exception e) {
+			logger.error("Omniture event is not generated");
+		}
+	}
+
+	/**
+	 * @param locator
+	 *            : Pass the String locator to the method and it will verify if
+	 *            the element is enabled/checked or not.
+	 */
+	public void verifyElementIsSelected(WebDriver driver, String locator) {
+
+		try {
+			System.out.println("Verifying if " + locator + " is selected.");
+			if (driver.findElement(By.cssSelector(locator)).isEnabled()) {
+				findElementAndHighlight(driver, locator);
+				sb.verifyTrue(true);
+			}
+
+			else if ((driver.findElements(By.cssSelector(locator)).size() == 0)
+					|| !driver.findElement(By.cssSelector(locator)).isEnabled()) {
+				sb.verifyTrue(false);
+			}
+
+		}
+
+		catch (NoSuchElementException e) {
+			logger.error(locator + ": no such locator was found on "
+					+ driver.getCurrentUrl());
+			System.err.println(locator + ": no such locator was found on "
+					+ driver.getCurrentUrl());
+			sb.verifyTrue(false);
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			logger.error(e.getMessage() + "occurred on while checking if "
+					+ locator + " is checked/enabled. On URL:"
+					+ driver.getCurrentUrl());
+			System.err.println(e.getMessage()
+					+ "occurred on while checking if " + locator
+					+ " is checked/enabled. On URL:" + driver.getCurrentUrl());
+			e.printStackTrace();
+		}
+
+	}
+
+	public void verifyComScore(WebDriver driver) {
+		sb.verifyTrue(driver.getPageSource().contains(
+				"<script> COMSCORE.beacon"));
+		waitForPageToLoad(driver);
+		verifyElementExists(driver, "html head#head noscript");
+	}
+
+	public void verifyRegistrationPage(WebDriver driver) {
+		doAction(driver, "click", "link=Register");
+		waitForPageToLoad(driver);
+		System.out.println("Verifying navigation to the Registration Page");
+		System.out.println("The title is " + driver.getTitle());
+		if (!(baseURL + "publicsite/funnel/register.aspx").equals(driver
+				.getCurrentUrl())) {
+			// fail("This is not Registration Page");
+			logger.error("This is not EH  Registration Page..! The URL of the page is "
+					+ driver.getCurrentUrl());
+			throw new IllegalStateException(
+					"This is not EH  Registration Page..! The URL of the page is "
+							+ driver.getCurrentUrl());
+		}
+	}
+
+	public GenericRegistration verifyGenericFunnelPage(WebDriver driver) {
+		doAction(driver, "click", "a#reg");
+		return new GenericRegistration(driver, 1);
+	}
+
+	public GenericRegistration verifyFunnelVariablePage(WebDriver driver,
+			String fileToRead, int funnelLength) {
+		// String baseURL = (String)
+		// js.executeScript("return window.location.hostname");
+		try {
+			load_data_file(fileToRead);
+			driver.get(baseURL + getDataFieldValue("url~" + funnelLength));
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new IllegalStateException(
+					"Error trying to extract registration url from source file.");
+		}
+
+		return new GenericRegistration(driver, 1);
+	}
+
+	public WebElement explicitlyWaitForElement(WebDriver driver, String locator) {
+		WebElement foundLocator = null;
+		try {
+			Wait<WebDriver> wait = new WebDriverWait(driver, 45);
+			foundLocator = wait.until(ExpectedConditions
+					.visibilityOfElementLocated(By.cssSelector(locator)));
+		} catch (TimeoutException t) {
+			System.err
+					.println("Timed out after 45 seconds while looking for locator "
+							+ locator
+							+ " on current url "
+							+ driver.getCurrentUrl());
+		}
+		return foundLocator;
+	}
+
+	public void validatePartialText(WebDriver driver, String message,
+			String locator, String expected) {
+		try {
+			System.out.println("Validating " + message);
+			sb.verifyTrue(driver.findElement(By.cssSelector(locator)).getText()
+					.contains(expected));
+			if (!driver.findElement(By.cssSelector(locator)).getText()
+					.contains(expected)) {
+				String actual = driver.findElement(By.cssSelector(locator))
+						.getText();
+				System.out
+						.println("Expected and Actual text did not match. Expected was "
+								+ expected + " Actual text is " + actual);
+			}
+		} catch (NoSuchElementException e) {
+			sb.verifyTrue(false);
+			System.err.println("locator " + locator + "For expected text "
+					+ expected + " was not found on the URL "
+					+ driver.getCurrentUrl());
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			System.err
+					.println("Exception occurred in validatePartialText method.");
+			e.printStackTrace();
+		}
+	}
+
+	public void printErrorMessage(String error) {
+		// ansiError = new Ansi(Ansi.Attribute.BRIGHT, Ansi.Color.RED,
+		// Ansi.Color.WHITE);
+		// ansiError.outln(error);
+	}
+
+	public void validateInputText(WebDriver driver, String message,
+			String locator, String expected) {
+		try {
+			System.out.println("Verifying " + message);
+			sb.verifyTrue(driver.findElement(By.cssSelector(locator))
+					.getAttribute("value").equalsIgnoreCase(expected));
+			if (!driver.findElement(By.cssSelector(locator))
+					.getAttribute("value").equalsIgnoreCase(expected)) {
+				String actual = driver.findElement(By.cssSelector(locator))
+						.getAttribute("value");
+				System.out
+						.println("Expected and Actual text did not match. Expected was "
+								+ expected + " Actual text is " + actual);
+			}
+		} catch (NoSuchElementException e) {
+			sb.verifyTrue(false);
+			System.err.println("locator " + locator + "For expected text "
+					+ expected + " was not found on the URL "
+					+ driver.getCurrentUrl());
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			System.out.println(e.getMessage());
+		}
+	}
+
+	public WTEPage loginUser(WebDriver driver, Map<String, String> userInfo) {
+		try {
+			// verifyElementIsVisible(driver, "div.buttons span#signin");
+
+			if (driver.findElements(
+					By.cssSelector("div.reg_lightbox_container")).size() > 0) {
+				doAction(driver, "click", "header.header a img.close");
+			}
+			Thread.sleep(500);
+			doAction(driver, "click",
+					"//header[@id='header']/div/div/div[2]/span");// "div.buttons span#signin");
+			/*
+			 * WebElement loginPopup = explicitlyWaitForElement(driver,
+			 * "input#btnPartialLogon"); //input#LoginModel_UserName");
+			 * Thread.sleep(700); waitForPageToLoad(driver); if(loginPopup !=
+			 * null) { doAction(driver,"click", "div.buttons span#signin"); }
+			 */
+			// waitForPageToLoad(driver);
+			verifyElementIsVisible(driver, "//div[2]/div/div/div[2]/form/input");
+			// if(loginPopup != null) {
+			doAction(driver, "click", "//div[2]/div/div/div[2]/form/input");
+			// }
+			doAction(driver, "type", "input#LoginModel_UserName",
+					userInfo.get("username"));
+			waitForPageToLoad(driver);
+			doAction(driver, "type", "input#LoginModel_Password",
+					userInfo.get("password"));
+			doAction(driver, "click", "//input[@id='btnPartialLogon']");
+		} catch (Exception e) {
+			System.err.println("Failed to login " + e.getMessage());
+		}
+		return new WTEPage(driver, true);
+	}
+
+	public Map<String, String> getUserInfo(String userFile) {
+		Map<String, String> userInfo = new HashMap<String, String>();
+
+		try {
+			load_data_file(userFile);
+			userInfo = readInCSV(userFile);
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new IllegalStateException(
+					"Error trying to read in user info.");
+		}
+		return userInfo;
+	}
+
+	public Map<String, String> readInCSV(String filePath) {
+		String line = "";
+		userInfo.clear();
+
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(new File(
+					filePath)));
+			line = br.readLine();
+			br.close();
+		} catch (IOException io) {
+			System.out.println(io.getMessage());
+		}
+
+		String[] attributeList = line.split(",");
+		try {
+			for (String attribute : attributeList) {
+				String value = getDataFieldValue(attribute + "~1");
+				userInfo.put(attribute, value);
+			}
+		} catch (Exception e) {
+			System.err
+					.println("Issues reading from source file" + e.toString());
+		}
+		return userInfo;
+	}
+
+	public String getDestinationUrl(WebDriver driver) {
+		String destUrl = "what-to-expect/landing-page.aspx";
+		String regex = "desturl=[/[\\w-]+]+\\w.aspx";
+		Pattern p = Pattern.compile(regex);
+		Matcher m = p.matcher(driver.getCurrentUrl());
+
+		if (m.find()) {
+			// get destination url without "desturl="
+			destUrl = m.group(0).substring(8);
+		}
+		return destUrl;
+	}
+
+	/*
+	 * public boolean waitForPageToLoad(WebDriver driver) { long start =
+	 * System.currentTimeMillis(); try { Thread.sleep(700); } catch
+	 * (InterruptedException e1) { // TODO Auto-generated catch block
+	 * e1.printStackTrace(); } while (System.currentTimeMillis() - start <
+	 * PAGE_TIMEOUT_TIME) { if (((JavascriptExecutor) driver)
+	 * .executeScript("return document.readyState").toString()
+	 * .equalsIgnoreCase("complete")) { return true; } else { try {
+	 * Thread.sleep(300); } catch (InterruptedException e) {
+	 * e.printStackTrace(); } } }
+	 * 
+	 * return false;
+	 * 
+	 * }
+	 */
+
+	public void testResponseCode(WebDriver driver) {
+		HttpURLConnection con1 = null;
+		try {
+			con1 = (HttpURLConnection) (new URL(link).openConnection());
+			con1.setInstanceFollowRedirects(false);
+			con1.setConnectTimeout(3000);
+			con1.setReadTimeout(3000);
+			int responseCode = con1.getResponseCode();
+			if (responseCode < 300) {
+				logger.info("Link is" + link + ". Response Code is "
+						+ responseCode);
+			}
+
+			else if (responseCode >= 400) {
+				logger.error("Link is" + link + ". Response Code is"
+						+ responseCode);
+			}
+
+			else if (responseCode == 301 || responseCode == 302) {
+				logger.warn("Link is" + link
+						+ ". It is redirected to some other URL");
+			}
+		} catch (MalformedURLException e) {
+
+			logger.error("Retrieved link is a malformed URL at "
+					+ driver.getCurrentUrl());
+			e.printStackTrace();
+		} catch (IOException e) {
+
+			logger.error("I/O exception occurred on " + link
+					+ ". The response code is probably 500."
+					+ "Current URL is " + driver.getCurrentUrl());
+			e.printStackTrace();
+		} catch (Exception e) {
+			logger.error(e.getMessage() + " occurred while testing " + link
+					+ ". The current URL is" + driver.getCurrentUrl());
+		}
+
+	}
+
+	public void load_data_file(String dataFile) throws Exception {
+		dataArray.clear();
+		// if data_file is absolute, use this
+		try {
+			// Open an input stream
+			// Read a line of text
+			String line = "";
+			BufferedReader br = new BufferedReader(new FileReader(dataFile));
+			while ((line = br.readLine()) != null) {
+				dataArray.add(line);
+			}
+			br.close();
+		}
+
+		catch (IOException e) {
+			e.printStackTrace();
+			System.out.println("Unable to read from file");
+			System.err.println("Unable to read from the file");
+		}
+	}
+
+	public String getDataFieldValue(String dataElement) throws Exception {
+		String strKeyword = dataElement.split("\\~")[0];
+		int intRowNum = Integer.parseInt(dataElement.split("\\~")[1]);
+		String[] data_fieldnames = dataArray.get(0).split(",");
+
+		for (int colInd = 0; colInd < data_fieldnames.length; colInd++) {
+			if ((data_fieldnames[colInd]).indexOf(strKeyword) >= 0) {
+				return dataArray.get(intRowNum).split(",")[colInd];
+			}
+		}
+		return "";
+	}
+
+	/**
+	 * Performs selenium click-type actions against clickable elements on the
+	 * current page that are found by the passed in locator.
+	 * 
+	 * @param actionType
+	 *            The type of action performed on the element. Possible values
+	 *            are: <br />
+	 *            check - check a checkbox; if already checked, nothing happens.
+	 *            uncheck - uncheck a checkbox; if already unchecked, nothing
+	 *            happens. click - click on any element on screen. CSS Locators
+	 *            only.
+	 */
+	public void doAction(WebDriver driver, String actionType, String locator) {
+
+		List<String> validActionType = new ArrayList<String>();
+		validActionType.add("check");
+		validActionType.add("uncheck");
+		validActionType.add("click");
+		System.out.println(actionType + "ing on " + locator);
+
+		if (actionType.toLowerCase().equals("click")) {
+			try {
+				if (locator.startsWith("link=")) {
+					findElementAndHighlight(driver, locator.substring(5));
+					driver.findElement(By.linkText(locator.substring(5)))
+							.click();
+
+				}
+
+				else if (locator.startsWith("css=")) {
+					findElementAndHighlight(driver, locator.substring(4));
+					driver.findElement(By.cssSelector(locator.substring(4)))
+							.click();
+				}
+
+				else if (locator.startsWith("//")) {
+					findElementAndHighlight(driver, locator);
+					driver.findElement(By.xpath(locator)).click();
+				}
+
+				else if (!(locator.startsWith("link=")
+						|| locator.startsWith("css=") || locator
+							.startsWith("//"))) {
+					findElementAndHighlight(driver, locator);
+					driver.findElement(By.cssSelector(locator)).click();
+				}
+
+			}
+
+			catch (NoSuchElementException e) {
+				Assert.fail(e.getMessage() + " occurred on "
+						+ driver.getCurrentUrl());
+				System.err.println("locator " + locator
+						+ " was not found on URL" + driver.getCurrentUrl());
+				logger.error("locator " + locator + " was not found on URL"
+						+ driver.getCurrentUrl());
+				e.printStackTrace();
+			} catch (Exception e) {
+				Assert.fail(e.getMessage() + " occurred on "
+						+ driver.getCurrentUrl());
+				System.err
+						.println("Some error occurred while clicking on locator "
+								+ locator);
+				logger.error("Some error occurred while clicking on locator "
+						+ locator);
+				e.printStackTrace();
+			}
+
+		}
+	}
+
+	/**
+	 * Performs actions on selenium objects that require an input such as input
+	 * text fields or dropdown items.
+	 * 
+	 * @param actionType
+	 *            The type of action performed on the element. Possible values
+	 *            are: <br />
+	 *            type - Enter a value into the element select - Select a value
+	 *            from a dropdown element selectbyvisibletext - Select an
+	 *            element from dropdown list with help of visible text
+	 *            selectbyindex - Select an element by its index value.
+	 * @throws Exception
+	 */
+	public void doAction(WebDriver driver, String actionType,
+			String CSSlocator, String value) throws Exception
+
+	{
+		List<String> validActionType = new ArrayList<String>();
+		validActionType.add(TYPE);
+		validActionType.add(SELECT);
+		validActionType.add(SELECT_BY_VISIBLETEXT);
+		validActionType.add(SELECT_BY_INDEX);
+		System.out.println(actionType + "-ing in " + CSSlocator);
+		// validation
+		if (!validActionType.contains(actionType)) {
+			return;
+		}
+
+		if (CSSlocator == null || CSSlocator.isEmpty()) {
+			return;
+		}
+
+		try {
+			if (actionType.toLowerCase().equals("type")) {
+				findElementAndHighlight(driver, CSSlocator);
+				driver.findElement(By.cssSelector(CSSlocator)).sendKeys(value);
+			} else if (actionType.toLowerCase().equals("select")
+					|| actionType.toLowerCase().equals("selectbyvisibletext")
+					|| actionType.toLowerCase().equals("selectbyindex")) {
+				WebElement e = driver.findElement(By.cssSelector(CSSlocator));
+				// WebElement e =
+				// driver.findElement(By.id("ctl01_ctl01_ctlFunnelRegister_ctl00_uc_BirthDate_ddMonth"));
+				Select select = new Select(e);
+				if (actionType.toLowerCase().equals("select")) {
+					select.selectByValue(value);
+				} else if (actionType.toLowerCase().equals(
+						"selectbyvisibletext")) {
+					select.selectByVisibleText(value);
+				} else if (actionType.toLowerCase().equals("selectbyindex")) {
+					int index = Integer.parseInt(value);
+					select.selectByIndex(index);
+				}
+			}
+		}
+
+		catch (NoSuchElementException e) {
+			System.err.println("locator " + CSSlocator
+					+ " was not found on URL " + driver.getCurrentUrl());
+			logger.error("locator " + CSSlocator + " was not found on URL "
+					+ driver.getCurrentUrl());
+			throw new NoSuchElementException(" locator " + CSSlocator
+					+ " was not found on URL " + driver.getCurrentUrl());
+		} catch (Exception e) {
+			System.err
+					.println("Some error occurred while executing selenium command on "
+							+ CSSlocator);
+			logger.error("Some error occurred while executing selenium command on "
+					+ CSSlocator);
+			e.printStackTrace();
+			throw new Exception(e.getMessage() + " occurred on URL "
+					+ driver.getCurrentUrl());
+		}
+
+	}
+
+	/**
+	 * @return This method returns boolean depending on document.readyState is
+	 *         "complete" or "interactive"
+	 */
+	public boolean waitForPageToLoad(WebDriver driver) {
+		long start = System.currentTimeMillis();
+		try {
+			Thread.sleep(700);
+		} catch (InterruptedException e1) {
+
+			e1.printStackTrace();
+		}
+		while (System.currentTimeMillis() - start < PAGE_TIMEOUT_TIME) {
+			if (((JavascriptExecutor) driver)
+					.executeScript("return document.readyState").toString()
+					.equalsIgnoreCase("complete")) {
+				return true;
+			} else {
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		return false;
+
+	}
+
+	/**
+	 * @param locator
+	 *            : pass a String locator to make sure if the element is
+	 *            invisible or not.
+	 */
+	public void waitForElementInVisible(WebDriver driver, String locator)
+
+	{
+		String documentation = "Waiting upto  30000 ms for element with locator: \""
+				+ locator + "\" to appear on page.";
+		System.out.println(documentation);
+		try {
+
+			WebDriverWait wait = new WebDriverWait(driver, 30);
+			wait.ignoring(StaleElementReferenceException.class);
+			wait.until(ExpectedConditions.invisibilityOfElementLocated(By
+					.cssSelector(locator)));
+		}
+
+		catch (TimeoutException e) {
+			System.err.println("Waited for an element " + locator
+					+ " for 30 seconds to be invisible but timed out on "
+					+ driver.getCurrentUrl());
+		}
+
+		catch (NoSuchElementException e) {
+			System.err.println("Element " + locator + " is not present.");
+		}
+
+		catch (Exception e) {
+			System.err.println(e.getMessage() + " occured on "
+					+ driver.getCurrentUrl());
+		}
+	}
+
+	@SuppressWarnings("unused")
+	private void updateLastChange() {
+		js.executeScript("$('html').data('CHANGED_PAGE', false)");
+	}
+
+	/**
+	 * @param locator
+	 *            Pass the css locator that you want to wait for to be visible.
+	 *            Every CSS locator may not work. Debug and test the css locator
+	 *            if it works.
+	 */
+	public void waitForElementVisible(WebDriver driver, String locator)
+
+	{
+		String documentation = "Waiting upto 15000 ms for element with locator: \""
+				+ locator
+				+ "\" to appear on page."
+				+ " If timed out, will refresh the page and check once again. ";
+		System.out.println(documentation);
+
+		try {
+			WebDriverWait wait = (WebDriverWait) new WebDriverWait(driver, 15)
+					.pollingEvery(1, TimeUnit.SECONDS);
+			// wait.ignoring(AssertionFailedError.class);
+			wait.ignoring(StaleElementReferenceException.class);
+			wait.until(ExpectedConditions.visibilityOfElementLocated(By
+					.cssSelector(locator)));
+
+		}
+
+		catch (TimeoutException e) {
+			if (visibleCount <= 1) {
+				driver.navigate().refresh();
+				waitForElementVisible(driver, locator);
+				visibleCount = visibleCount + 1;
+			}
+
+			System.err.println("Waited for an element " + locator
+					+ " for 30 seconds to be visible but timed out on "
+					+ driver.getCurrentUrl());
+		}
+
+		catch (NoSuchElementException e) {
+			if (visibleCount <= 1) {
+				driver.navigate().refresh();
+				waitForElementPresent(driver, locator);
+				visibleCount = visibleCount + 1;
+			}
+			System.err.println("Element " + locator + " is not available.");
+		}
+
+		catch (Exception e) {
+			if (visibleCount <= 1) {
+				driver.navigate().refresh();
+				waitForElementVisible(driver, locator);
+				visibleCount = visibleCount + 1;
+
+			}
+
+			System.err.println(e.getMessage() + " occured on "
+					+ driver.getCurrentUrl());
+		}
+	}
+
+	/**
+	 * @param partialURL
+	 *            : Pass the partial URL to this method and it will return
+	 *            boolean when the that particular URL is loaded. i.e.
+	 *            document.readyState returns complete.
+	 * @return The method returns a boolean.
+	 */
+	public boolean waitForPageToLoad(WebDriver driver, String partialURL) {
+		long start = System.currentTimeMillis();
+
+		while (System.currentTimeMillis() - start < PAGE_TIMEOUT_TIME) {
+			if (((JavascriptExecutor) driver)
+					.executeScript("return document.readyState").toString()
+					.equalsIgnoreCase("complete")
+					&& driver.getCurrentUrl().contains(partialURL)) {
+				return true;
+			} else {
+				try {
+					Thread.sleep(300);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+
+		return false;
+
+	}
+
+	public String screenShot(WebDriver driver, String str_csslocator,
+			String fileName) {
+		if (str_csslocator.startsWith("//")) {
+			if (driver.findElements(By.xpath(str_csslocator)).size() != 0) {
+				findElementAndHighlight(driver, str_csslocator);
+			}
+		} else if (!(str_csslocator.startsWith("//")
+				|| str_csslocator.startsWith("css=")
+				|| str_csslocator.startsWith("link=") || str_csslocator
+					.startsWith("id="))) {
+			if (driver.findElements(By.cssSelector(str_csslocator)).size() != 0) {
+				findElementAndHighlight(driver, str_csslocator);
+			}
+		}
+
+		if (str_csslocator != null) {
+			str_csslocator = removeSpecialCharacters(str_csslocator);
+		}
+
+		File screenshot = ((TakesScreenshot) driver)
+				.getScreenshotAs(OutputType.FILE);
+		File screenshotMoved = new File(
+				"T:\\QA\\Automation\\ScreenShotFailures\\" + str_csslocator
+						+ System.currentTimeMillis());
+		try {
+			FileUtils.moveFile(screenshot, screenshotMoved);
+			FileUtils.deleteDirectory(screenshot);
+		}
+
+		catch (IOException e) {
+
+			e.printStackTrace();
+		}
+
+		return "file:\\\\\\" + screenshotMoved.toString();
+	}
+
+	/**
+	 * @ This takes the screenshot and stores it on the shared drive in
+	 * "\\\\usnywfs01\\Tech\\QA\\Automation\\ScreenShotFailures\\" folder. Files
+	 * names will be with the timestamp.
+	 */
+	public void screenShot(WebDriver driver, String fileName) {
+		try {
+			String currentDirectory = directory.getCanonicalPath();
+			new File(directory.getCanonicalPath() + "/ScreenShotFailures")
+					.mkdir();
+			new File(currentDirectory + "/ScreenShotFailures/" + fileName)
+					.mkdirs(); // ensure directory is there
+			File out = (((TakesScreenshot) driver)
+					.getScreenshotAs(OutputType.FILE));
+			File screenshotMoved = new File(directory.getCanonicalPath()
+					+ "/ScreenShotFailures/" + fileName + "/" + fileName
+					+ ".png");
+			if (screenshotMoved.exists()) {
+				screenshotMoved.delete();
+			}
+			FileUtils.moveFile(out, screenshotMoved);
+		} catch (Exception e) {
+			// No need to crash the tests if the screenshot fails
+
+		}
+	}
+
+	public String removeSpecialCharacters(String s) {
+		return s.replaceAll("\\W", "_");
+	}
+
+	public int rand(int min, int max) {
+		Random generator = new Random();
+		return generator.nextInt(max - min) + min;
+	}
+
+	@SuppressWarnings("deprecation")
+	public String randomString(int lo, int hi) {
+		int n = rand(lo, hi);
+		byte b[] = new byte[n];
+		for (int i = 0; i < n; i++)
+			b[i] = (byte) rand('a', 'z');
+		return new String(b, 0);
+	}
+
+	/*
+	 * /** Closes a browser. Depending on what browser it is, closing api will
+	 * be used.
+	 * 
+	 * public void cleanAndClose(WebDriver driver) { try { driver.close(); }
+	 * catch (Exception ignore) {
+	 * 
+	 * } try { if (driver != null) { driver.quit(); driver = null; } } catch
+	 * (Exception ignore) { } }
+	 */
+	/**
+	 * @param You
+	 *            can only pass css locator to this method. Time out is
+	 *            ACTION_TIMEOUT_TIME.
+	 */
+	public void waitForElementPresent(WebDriver driver, final String locator)
+
+	{
+		String documentation = "Waiting upto " + ACTION_TIMEOUT_TIME
+				+ "ms for element with locator: \"" + locator
+				+ "\" to appear on page.";
+		System.out.println(documentation);
+		int presentCount = 0;
+		try {
+			long timeStamp = System.currentTimeMillis();
+			while (driver.findElements(By.cssSelector(locator)).size() == 0
+					&& (System.currentTimeMillis() - timeStamp <= ACTION_TIMEOUT_TIME)) {
+				Thread.sleep(500);
+			}
+			if (System.currentTimeMillis() - timeStamp > ACTION_TIMEOUT_TIME) {
+				throw new TimeoutException("Waited 10 seconds for " + locator
+						+ " but failed to find its presence.");
+			}
+		}
+
+		catch (Exception e) {
+			if (presentCount <= 1) {
+				driver.navigate().refresh();
+				waitForElementVisible(driver, locator);
+				presentCount = presentCount + 1;
+			}
+			e.printStackTrace();
+		}
+	}
+
+	public String getFileLocation(String fileName) {
+		directory = new File(".");
+		String filePath = null;
+		try {
+			filePath = directory.getCanonicalPath() + "\\Data\\" + fileName;
+			System.out.println("The current filePath is " + filePath);
+		} catch (IOException e) {
+
+			e.printStackTrace();
+		}
+		return filePath;
+	}
+
+	/**
+	 * @param actionType
+	 *            This method is developed in the context of Page Factory
+	 *            Pattern. Currently only type operation is verified.
+	 * @param element
+	 *            WebElements are passed as argument instead of CSS Locators.
+	 * @param value
+	 */
+	public void doAction(WebDriver driver, String actionType,
+			WebElement element, String value, String description)
+
+	{
+		List<String> validActionType = new ArrayList<String>();
+		validActionType.add(TYPE);
+		validActionType.add(SELECT);
+		validActionType.add(SELECT_BY_VISIBLETEXT);
+		validActionType.add(SELECT_BY_INDEX);
+
+		// validation
+
+		try {
+			System.out.println(actionType + "-ing in "
+					+ element.toString().split("->")[1].replace("]]", "]")
+					+ " value is " + value);
+			if (actionType.toLowerCase().equals("type")) {
+				element.sendKeys(value);
+			} else if (actionType.toLowerCase().equals("select")
+					|| actionType.toLowerCase().equals("selectbyvisibletext")
+					|| actionType.toLowerCase().equals("selectbyindex")) {
+
+				Select select = new Select(element);
+				if (actionType.toLowerCase().equals("select")) {
+					select.selectByValue(value);
+				} else if (actionType.toLowerCase().equals(
+						"selectbyvisibletext")) {
+					select.selectByVisibleText(value);
+				} else if (actionType.toLowerCase().equals("selectbyindex")) {
+					int index = Integer.parseInt(value);
+					select.selectByIndex(index);
+				}
+			}
+		}
+
+		catch (NoSuchElementException e) {
+			logger.error("Element " + description + " was not found");
+		} catch (Exception e) {
+			sb.verifyTrue(false);
+			logger.error("Error occurred while clicking on" + description);
+			e.getMessage();
+		}
+
+	}
+
+	/**
+	 * Performs selenium click-type actions against clickable elements on the
+	 * current page that are found by the passed in locator.
+	 * 
+	 * @param actionType
+	 *            The type of action performed on the element. Possible values
+	 *            are: <br />
+	 * 
+	 *            click - click on any element on screen. CSS Locators only.
+	 */
+	public void doAction(WebDriver driver, String actionType,
+			WebElement element, String description) {
+
+		List<String> validActionType = new ArrayList<String>();
+		validActionType.add("click");
+
+		if (actionType.toLowerCase().equals("click")) {
+			try {
+				System.out.println(actionType + "ing on "
+						+ element.toString().split("->")[1].replace("]]", "]"));
+				element.click();
+			}
+
+			catch (NoSuchElementException e) {
+				sb.verifyTrue(false);
+				logger.error("Element " + description + " was not found");
+				e.getMessage();
+			} catch (Exception e) {
+				sb.verifyTrue(false);
+				logger.error("Error occurred while clicking on" + description);
+				e.getMessage();
+			}
+
+		}
+	}
+
+	/**
+	 * @param String
+	 *            relativePath. Pass the relativePath only. Not the absoulte
+	 *            URL.
+	 */
+	public void navigateTo(WebDriver driver, String relativePath) {
+		System.out.println("Navigating to " + baseURL + relativePath);
+		driver.get(baseURL + relativePath);
+	}
+
+	/**
+	 * This method returns the timestamp whenever called and replaces the
+	 * speical characters.
+	 */
+	public String getTimeStamp() {
+		Date date = new Date();
+		String timeStamp = new Timestamp(date.getTime()).toString().replaceAll(
+				"[\\W]", "_");
+		return timeStamp;
+	}
+
+	// TODO: BeforeMethod
+	@org.testng.annotations.BeforeMethod(alwaysRun = true, timeOut = 300000)
+	@Parameters({ "environment", "EXECUTION_ENVIRONMENT", "browserName",
+			"browserVersion", "os" })
+	public void BeforeTest(String environment, String EXECUTION_ENVIRONMENT,
+			String browserName, String browserVersion, String os)
+			throws IOException {
+		this.environment = environment;
+		this.EXECUTION_ENVIRONMENT = EXECUTION_ENVIRONMENT;
+		this.SELENIUM_BROWSER = browserName;
+		this.SELENIUM_VERSION = browserVersion;
+		this.SELENIUM_PLATFORM = os;
+		System.out.println("environment: " + this.environment + "\n"
+				+ "EXECUTION_ENVIRONMENT: " + this.EXECUTION_ENVIRONMENT + "\n"
+				+ "SELENIUM_BROWSER: " + this.SELENIUM_BROWSER + "\n"
+				+ "SELENIUM_VERSION: " + this.SELENIUM_VERSION + "\n");
+
+		System.out.println("Invoking home");
+		printStartMessage();
+		this.openHome();
+		try {
+			if (driver instanceof RemoteWebDriver) {
+				jobID = ((RemoteWebDriver) driver).getSessionId().toString();
+			}
+		} catch (Exception ignore) {
+
+		}
+		if (System.getenv("EXECUTION_ENVIRONMENT")
+				.equalsIgnoreCase("SAUCELABS"))
+			System.out.println("SauceOnDemandSessionID="
+					+ (((RemoteWebDriver) driver).getSessionId()).toString()
+					+ " job-name=" + this.JOB_Name);
+	}
+
+	// TODO: @AfterMethod
+	@AfterMethod
+	public void tearDown(ITestResult result) throws SocketException,
+			IOException {
+		printEndMessage();
+		try {
+			driver.close();
+		} catch (Exception ignore) {
+
+		}
+		try {
+			if (driver != null) {
+				driver.quit();
+				driver = null;
+			}
+		} catch (Exception ignore) {
+		}
+
+	}
+
+	public void openHome() throws IOException {
+
+		String environment = this.environment;
+		File directory = new File(".");
+		try {
+			PropertyConfigurator.configure(directory.getCanonicalPath()
+					+ "/src/log4j.properties");
+		} catch (IOException e1) {
+			System.err
+					.println("Could not find the path of the current directory..!");
+			e1.printStackTrace();
+		}
+		System.out.println("Environment is " + environment);
+		if (environment.equalsIgnoreCase("QA")) {
+			baseURL = ";
+		} else if (environment.equalsIgnoreCase("DEV")) {
+			baseURL = "";
+		} else if (environment.equalsIgnoreCase("PREVIEW")) {
+			baseURL = "";
+		} else {
+			baseURL = "";
+		}
+		DesiredCapabilities desiredCapabilities = new DesiredCapabilities();
+		this.JOB_Name = this.getClass().getSimpleName() + "_"
+				+ this.SELENIUM_BROWSER + "_" + this.SELENIUM_VERSION + "_"
+				+ this.SELENIUM_PLATFORM;
+
+		if (SELENIUM_BROWSER.equalsIgnoreCase("safari")) {
+			String appData = System.getenv("APPDATA");
+			desiredCapabilities.setCapability("safari.dataDir", appData
+					+ "\\Apple Computer\\Safari");
+		}
+		desiredCapabilities.setCapability("name", this.JOB_Name);
+		desiredCapabilities.setCapability("command-timeout", 120);
+		desiredCapabilities.setCapability("idle-timeout", 120);
+		desiredCapabilities.setBrowserName(this.SELENIUM_BROWSER);
+		desiredCapabilities.setVersion(this.SELENIUM_VERSION);
+		desiredCapabilities.setCapability(CapabilityType.PLATFORM,
+				this.SELENIUM_PLATFORM);
+		String beforeHost = "";
+		if (System.getenv("EXECUTION_ENVIRONMENT")
+				.equalsIgnoreCase("SAUCELABS")) {
+			beforeHost = System.getenv("SAUCE_USER_NAME") + ":"
+					+ System.getenv("SAUCE_API_KEY") + "@";
+		}
+		URL url = new URL("http://"
+				+ beforeHost
+				+ (!System.getenv("EXECUTION_ENVIRONMENT").equalsIgnoreCase(
+						"SAUCELABS") ? System.getenv("INTERNAL_HOST")
+						: System.getenv("SELENIUM_HOST"))
+				+ ":"
+				+ (!System.getenv("EXECUTION_ENVIRONMENT").equalsIgnoreCase(
+						"SAUCELABS") ? System.getenv("INTERNAL_PORT")
+						: System.getenv("SELENIUM_PORT")) + "/wd/hub");
+		System.out.print("URL = " + url.toString());
+		driver = new RemoteWebDriver(url, desiredCapabilities);
+		if (!SELENIUM_BROWSER.equalsIgnoreCase("safari")) {
+			driver.manage().timeouts().pageLoadTimeout(120, TimeUnit.SECONDS);
+		}
+		js = (JavascriptExecutor) driver;
+		driver.get(baseURL);
+	}
+	/*
+	 * public void launchFirebugAndOmnibug() { File file = new File(
+	 * "C:\\Users\\achaudhri\\Downloads\\firebug-1.9.0.xpi"); File file1 = new
+	 * File( "C:\\Users\\achaudhri\\Downloads\\omnibug-0.5.437.xpi");
+	 * System.setProperty( "webdriver.firefox.profile",
+	 * "C:\\Users\\achaudhri\\AppData\\Local\\Mozilla\\Firefox\\Profiles\\e5u6wjz4.profile1"
+	 * ); File browserProfile = new File(
+	 * "C:\\Users\\achaudhri\\AppData\\Local\\Mozilla\\Firefox\\Profiles\\e5u6wjz4.profile1"
+	 * ); FirefoxProfile firefoxProfile = new FirefoxProfile(browserProfile);
+	 * try { firefoxProfile.addExtension(file); } catch (IOException e) {
+	 * 
+	 * System.err
+	 * .println("Error in adding the firebug extension to the profile");
+	 * e.printStackTrace(); }
+	 * 
+	 * try { firefoxProfile.addExtension(file1); } catch (IOException e) {
+	 * 
+	 * e.printStackTrace(); } Calendar cal = Calendar.getInstance(); String time
+	 * = cal.getTime().toString().replace(" ", "_") .replace(":", "_");
+	 * firefoxProfile.setPreference("extnesions.firebug.currentVersion",
+	 * "1.9.0");
+	 * firefoxProfile.setPreference("extnesions.omnibug.currentVersion",
+	 * "0.5.432");
+	 * firefoxProfile.setPreference("extensions.omnibug.enableFileLogging",
+	 * true); firefoxProfile.setPreference("extensions.omnibug.logFileName",
+	 * "C:\\Users\\achaudhri\\Downloads\\omnibugLog" + time + ".txt");
+	 * 
+	 * try { driver = new FirefoxDriver(firefoxProfile); driver.get(baseURL); }
+	 * 
+	 * catch (UnreachableBrowserException e) { driver = new FirefoxDriver();
+	 * driver.get(baseURL); } }
+	 */
+}
